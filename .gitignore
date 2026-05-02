@@ -1,0 +1,49 @@
+# Repository-wide large artifacts (ML/data)
+*.onnx
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.ckpt
+*.pt
+*.pth
+*.pb
+*.tflite
+*.npy
+*.npz
+
+# Compiled binaries and toolchain outputs
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.obj
+*.o
+*.pdb
+*.exp
+*.ilk
+*.idb
+
+# Logs and runtime output
+*.log
+logs/
+honey_pot/logs/
+
+# Local/editor/temporary files
+*.tmp
+*.temp
+*.cache
+*~
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Common generated folders that should not be committed
+ml-service/build/
+ml-service/models/
+honey_pot/*.exe

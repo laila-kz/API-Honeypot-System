@@ -1,0 +1,32 @@
+# Build folders
+build/
+cmake-build-*/
+out/
+bin/
+x64/
+Release/
+Debug/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Visual Studio
+*.vcxproj*
+*.sln
+*.user
+*.filters
+.ipch/
+.vs/
+
+# Generated ML artifacts
+*.onnx
+*.pkl
+*.joblib
+*.exe
+*.dll
+*.log
+models/
+
