@@ -15,7 +15,7 @@ struct FeatureVector {
     float header_anomaly_score;
     float time_between_requests;
     float method_distribution;
-    
+
     std::vector<float> toVector() const {
         return {
             request_rate_per_ip,
@@ -30,7 +30,7 @@ struct FeatureVector {
 };
 
 struct PredictionResult {
-    std::string label;      // "normal", "suspicious", "attack"
+    std::string label;  // "normal", "suspicious", "attack"
     float confidence;
 };
 
@@ -38,30 +38,29 @@ class ONNXInference {
 public:
     ONNXInference();
     ~ONNXInference();
-    
+
     bool initialize(const std::string& modelPath);
     PredictionResult predict(const FeatureVector& features);
     bool isInitialized() const { return m_initialized; }
-    
+
 private:
     std::unique_ptr<Ort::Env> m_env;
     std::unique_ptr<Ort::Session> m_session;
     std::unique_ptr<Ort::MemoryInfo> m_memoryInfo;
     bool m_initialized;
-    
-    // Model metadata
-    // Keep owned strings so c_str() pointers remain valid during Run()
+
     std::vector<std::string> m_inputNameStrs;
     std::vector<std::string> m_outputNameStrs;
     std::vector<const char*> m_inputNames;
     std::vector<const char*> m_outputNames;
-    std::vector<int64_t> m_inputShape;
-    std::vector<int64_t> m_outputShape;
-    
-    // Label mapping (assuming model outputs class indices)
+    std::vector<int64_t> m_expectedInputDims;
+
     std::vector<std::string> m_labels = {"normal", "suspicious", "attack"};
-    
-    PredictionResult processOutput(const Ort::Value& outputTensor);
+
+    PredictionResult processOutputs(std::vector<Ort::Value>& outputTensors);
+    PredictionResult processFloatTensor(const Ort::Value& outputTensor);
+    PredictionResult processInt64Labels(const Ort::Value& outputTensor);
+    static PredictionResult fallbackResult();
 };
 
 #endif // ONNX_INFERENCE_HPP
