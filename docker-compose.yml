@@ -1,0 +1,60 @@
+# =============================================================================
+# API-Honeypot-System — instant sandbox deployment
+# =============================================================================
+# Prerequisites:
+#   1. Place your ONNX model at: ./ml-service/models/random_forest.onnx
+#      (export from https://github.com/laila-kz/Network-Intrusion-Detection-Model)
+#   2. docker compose up --build
+#
+# Services:
+#   - ml-service  → http://localhost:5000
+#   - honeypot    → http://localhost:8080
+# =============================================================================
+
+services:
+  ml-service:
+    build:
+      context: .
+      dockerfile: ml-service/Dockerfile
+    container_name: honeypot-ml
+    ports:
+      - "${ML_SERVICE_PORT:-5000}:5000"
+    environment:
+      ML_SERVICE_PORT: "5000"
+      ONNX_MODEL_PATH: /app/models/random_forest.onnx
+    volumes:
+      - ./ml-service/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/5000"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  honeypot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: honeypot
+    container_name: honeypot-api
+    ports:
+      - "${HONEYPOT_PORT:-8080}:8080"
+    environment:
+      HONEYPOT_HOST: "0.0.0.0"
+      HONEYPOT_PORT: "8080"
+      ML_SERVICE_URL: http://ml-service:5000/predict
+      LOG_DB_PATH: /app/logs/honeypot.db
+      LOG_JSON_PATH: /app/logs/requests.json
+      REQUEST_TIMEOUT_MS: "5000"
+      FALLBACK_LABEL: normal
+      FALLBACK_CONFIDENCE: "0.5"
+    volumes:
+      - honeypot-logs:/app/logs
+    depends_on:
+      ml-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  honeypot-logs:
