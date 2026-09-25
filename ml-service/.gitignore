@@ -6,6 +6,7 @@ bin/
 x64/
 Release/
 Debug/
+vcpkg_installed/
 
 # CMake
 CMakeFiles/
@@ -28,5 +29,6 @@ compile_commands.json
 *.exe
 *.dll
 *.log
-models/
-
+*.db
+models/*
+!models/.gitkeep
