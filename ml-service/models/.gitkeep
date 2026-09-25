@@ -1,0 +1,1 @@
+# Keep this directory in git; ONNX weights are ignored via root .gitignore.
