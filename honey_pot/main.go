@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"honeypot-go/config"
 	"honeypot-go/handlers"
@@ -13,6 +15,12 @@ import (
 
 func main() {
 	log.Println("Starting API Honeypot System...")
+	log.Printf("Config: addr=%s ml=%s db=%s timeout=%s",
+		config.ListenAddr(),
+		config.AppConfig.MLServiceURL,
+		config.AppConfig.LogDBPath,
+		config.AppConfig.RequestTimeout,
+	)
 
 	handler, err := handlers.NewAPIHandler()
 	if err != nil {
@@ -20,41 +28,39 @@ func main() {
 	}
 	defer handler.Close()
 
-	// Setup routes
-	http.HandleFunc("/login", handler.Login)
-	http.HandleFunc("/admin", handler.Admin)
-	http.HandleFunc("/api/v1/users", handler.Users)
-	http.HandleFunc("/api/v1/auth", handler.Auth)
-	http.HandleFunc("/reset-password", handler.ResetPassword)
-	http.HandleFunc("/dashboard", handler.Dashboard)
-	http.HandleFunc("/logs", handler.ViewLogs) // Bonus endpoint
+	mux := http.NewServeMux()
+	mux.HandleFunc("/login", handler.Login)
+	mux.HandleFunc("/admin", handler.Admin)
+	mux.HandleFunc("/api/v1/users", handler.Users)
+	mux.HandleFunc("/api/v1/auth", handler.Auth)
+	mux.HandleFunc("/reset-password", handler.ResetPassword)
+	mux.HandleFunc("/dashboard", handler.Dashboard)
+	mux.HandleFunc("/logs", handler.ViewLogs)
+	mux.HandleFunc("/", handler.NotFound)
 
-	// Add a catch-all for other paths (404 with fake data)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "Endpoint not found", "message": "API version deprecated"}`))
-	})
-
-	// Start server
 	server := &http.Server{
-		Addr:         config.AppConfig.ServerPort,
+		Addr:         config.ListenAddr(),
+		Handler:      mux,
 		ReadTimeout:  config.AppConfig.RequestTimeout,
-		WriteTimeout: config.AppConfig.RequestTimeout,
+		WriteTimeout: config.AppConfig.RequestTimeout + config.AppConfig.AttackDelay + 2*time.Second,
 	}
 
 	go func() {
-		log.Printf("Honeypot server listening on %s", config.AppConfig.ServerPort)
+		log.Printf("Honeypot server listening on %s", config.ListenAddr())
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
-	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Println("Shutting down honeypot server...")
-	log.Println("Logs saved to ./logs/")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Graceful shutdown error: %v", err)
+	}
+	log.Printf("Logs saved to %s / %s", config.AppConfig.LogDBPath, config.AppConfig.LogJSONPath)
 }
