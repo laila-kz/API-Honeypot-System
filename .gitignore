@@ -1,4 +1,17 @@
-# Repository-wide large artifacts (ML/data)
+# =============================================================================
+# API-Honeypot-System — root .gitignore
+# =============================================================================
+
+# ---- Secrets & local config -------------------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+!config/.env.example
+honey_pot/.env
+honey_pot/config/.env
+
+# ---- Model binaries & ML artifacts ------------------------------------------
 *.onnx
 *.pkl
 *.joblib
@@ -11,8 +24,21 @@
 *.tflite
 *.npy
 *.npz
+*.safetensors
 
-# Compiled binaries and toolchain outputs
+# ---- Databases & runtime logs -----------------------------------------------
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.log
+logs/
+**/logs/
+honey_pot/logs/
+
+# ---- Compiled binaries ------------------------------------------------------
 *.exe
 *.dll
 *.so
@@ -25,25 +51,63 @@
 *.exp
 *.ilk
 *.idb
+*.out
+honeypot
+honeypot.exe
+ml_service_cpp
+ml_service_cpp.exe
 
-# Logs and runtime output
-*.log
-logs/
-honey_pot/logs/
+# ---- Build / package manager artifacts --------------------------------------
+build/
+**/build/
+bin/
+**/bin/
+out/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+vcpkg_installed/
+**/vcpkg_installed/
+.vcpkg-root
 
-# Local/editor/temporary files
-*.tmp
-*.temp
-*.cache
+# ---- Go --------------------------------------------------------------------
+honey_pot/vendor/
+*.test
+*.prof
+
+# ---- Visual Studio / IDEs ---------------------------------------------------
+.vs/
+.vscode/
+!.vscode/extensions.json
+*.vcxproj*
+*.sln
+*.user
+*.filters
+.idea/
+*.swp
+*.swo
 *~
 
-# Python environments and caches
+# ---- Python (model export helpers) ------------------------------------------
 .venv/
 venv/
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
 
-# Common generated folders that should not be committed
-ml-service/build/
-ml-service/models/
-honey_pot/*.exe
+# ---- Docker / OS ------------------------------------------------------------
+*.tmp
+*.temp
+*.cache
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Model directory contents (keep folder via .gitkeep) --------------------
+ml-service/models/*
+!ml-service/models/.gitkeep
